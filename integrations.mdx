@@ -1,0 +1,190 @@
+---
+title: Integrations with Tima
+description: Connect Tima to external services to streamline your financial activities and enhance functionality.
+---
+
+## Overview
+
+Tima supports seamless integrations with banks, payment processors, and regulatory tools. These connections automate your financial workflows, from account linking to real-time updates via webhooks. Start with simple setups and scale to advanced API usage.
+
+<Columns cols={3}>
+  <Card title="Bank Linking" icon="banknote" href="#bank-linking">
+    Connect your accounts for automated balance checks.
+  </Card>
+  <Card title="Payment Processors" icon="credit-card" href="#payment-processors">
+    Accept payments through trusted providers.
+  </Card>
+  <Card title="Webhooks" icon="zap" href="#webhooks">
+    Receive instant notifications on events.
+  </Card>
+</Columns>
+
+## Link Bank Accounts
+
+Link external bank accounts to Tima to track balances and transactions automatically.
+
+<Callout kind="info">
+  Ensure your bank supports Open Banking APIs like Plaid or TrueLayer.
+</Callout>
+
+<Steps>
+  <Step title="Get API Credentials" icon="key">
+    Sign up for your bank's developer portal and obtain `{CLIENT_ID}` and `{CLIENT_SECRET}`.
+  </Step>
+  <Step title="Initiate Linking" icon="link">
+    Use Tima's endpoint to start the connection process.
+  </Step>
+  <Step title="Verify Access" icon="check-circle">
+    Confirm the link and test data retrieval.
+  </Step>
+</Steps>
+
+<CodeGroup tabs="JavaScript,cURL">
+  ```javascript
+  const response = await fetch('https://api.example.com/v1/accounts/link', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${YOUR_API_KEY}` },
+    body: JSON.stringify({
+      bankId: 'plaid-us-bank',
+      clientId: 'YOUR_CLIENT_ID',
+      clientSecret: 'YOUR_CLIENT_SECRET'
+    })
+  });
+  ```
+  ```bash
+  curl -X POST https://api.example.com/v1/accounts/link \
+    -H "Authorization: Bearer YOUR_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "bankId": "plaid-us-bank",
+      "clientId": "YOUR_CLIENT_ID",
+      "clientSecret": "YOUR_CLIENT_SECRET"
+    }'
+  ```
+</CodeGroup>
+
+## Third-Party Payment Processors
+
+Integrate Stripe, PayPal, or Adyen to handle payments directly in Tima.
+
+<Tabs>
+  <Tab title="Stripe" icon="dollar-sign">
+    Configure Stripe webhooks and API keys for seamless payouts.
+
+    <ParamField header="Stripe-Signature" param-type="string" required="true">
+      Verification signature from Stripe.
+    </ParamField>
+
+    ```javascript
+    const stripe = require('stripe')('sk_test_YOUR_STRIPE_SECRET');
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 2000,
+      currency: 'usd',
+      metadata: { timaAccount: 'acc_123' }
+    });
+    ```
+  </Tab>
+  <Tab title="PayPal" icon="paypal">
+    Use PayPal's orders API for international payments.
+
+    ```javascript
+    fetch('https://api.paypal.com/v2/checkout/orders', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${YOUR_PAYPAL_ACCESS_TOKEN}`,
+        'PayPal-Request-Id': 'unique-id'
+      },
+      body: JSON.stringify({
+        intent: 'CAPTURE',
+        purchase_units: [{ amount: { currency_code: 'USD', value: '20.00' } }]
+      })
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Webhook Setups
+
+Set up webhooks to receive real-time updates on transactions and account changes.
+
+<Request tabs="JavaScript,Python" show-lines="true">
+  ```javascript
+  // Register webhook endpoint
+  await fetch('https://api.example.com/v1/webhooks', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${YOUR_API_KEY}` },
+    body: JSON.stringify({
+      url: 'https://your-webhook-url.com/tima',
+      events: ['transaction.created', 'account.updated']
+    })
+  });
+  ```
+  ```python
+  import requests
+  response = requests.post(
+    'https://api.example.com/v1/webhooks',
+    headers={'Authorization': f'Bearer {YOUR_API_KEY}'},
+    json={
+      'url': 'https://your-webhook-url.com/tima',
+      'events': ['transaction.created', 'account.updated']
+    }
+  )
+  ```
+</Request>
+
+Validate incoming payloads with Tima's HMAC signature.
+
+```javascript
+app.post('/tima', (req, res) => {
+  const signature = req.headers['tima-signature'];
+  const isValid = verifySignature(req.body, signature, YOUR_WEBHOOK_SECRET);
+  if (isValid) {
+    // Process event
+    res.status(200).send('OK');
+  }
+});
+```
+
+## Compliance Tools
+
+Integrate with KYC/AML providers like Onfido or ComplyAdvantage.
+
+<Callout kind="alert">
+  Always store compliance data securely and comply with GDPR/CCPA.
+</Callout>
+
+Use Tima's compliance endpoint:
+
+<Response tabs="200,400">
+  ```json
+  {
+    "status": "verified",
+    "userId": "usr_123",
+    "checks": ["identity", "sanctions"]
+  }
+  ```
+  ```json
+  {
+    "error": "KYC failed",
+    "details": "Document mismatch"
+  }
+  ```
+</Response>
+
+## Advanced API Usage
+
+For custom integrations, explore Tima's REST API.
+
+<ParamField path="accountId" param-type="string" required="true">
+  Target account identifier.
+</ParamField>
+
+<ParamField query="sandbox" param-type="boolean" required="false">
+  Enable test mode.
+</ParamField>
+
+<Expandable title="API Rate Limits" default-open="false">
+  Tima enforces `{1000}` requests per minute. Exceeding limits returns `429 Too Many Requests`.
+</Expandable>
+
+Visit [Tima API Reference](/api-reference) for full details.
